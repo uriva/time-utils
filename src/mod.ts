@@ -12,7 +12,7 @@ import {
   smaller,
   throwerCatcher,
 } from "npm:gamla";
-import * as datetimeParse from "https://deno.land/std@0.214.0/datetime/parse.ts";
+import { parse as datetimeParse } from "jsr:@std/datetime";
 import {
   caseInsensitive,
   simplify,
@@ -131,7 +131,7 @@ const parseTimeStringHelper = (x: string) => {
     ]
   ) {
     try {
-      return datetimeParse.parse(x, format);
+      return datetimeParse(x, format);
       // deno-lint-ignore no-empty
     } catch (_) {}
   }
