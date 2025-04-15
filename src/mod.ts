@@ -1,5 +1,5 @@
 import { HebrewCalendar } from "npm:@hebcal/core";
-import { context } from "https://deno.land/x/context_inject@0.0.3/src/index.ts";
+import { context } from "npm:context-inject";
 import {
   coerce,
   concat,
@@ -11,14 +11,14 @@ import {
   pipe,
   smaller,
   throwerCatcher,
-} from "https://deno.land/x/gamla@118.0.0/src/index.ts";
+} from "npm:gamla";
 import * as datetimeParse from "https://deno.land/std@0.214.0/datetime/parse.ts";
 import {
   caseInsensitive,
   simplify,
   stringToRegexp,
   wholeWord,
-} from "https://deno.land/x/silly_nlp@33.0.0/src/index.ts";
+} from "npm:silly-nlp";
 
 const minuteInMs = 60 * 1000;
 
