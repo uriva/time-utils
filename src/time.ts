@@ -49,12 +49,21 @@ export const humanTimeToTimestamp = (
     minute,
   }).epochMilliseconds;
 
-export const rangeOfNHours = (durationHours: number) =>
+export const rangeOfNHours: (
+  durationHours: number,
+) => (
+  tz: number,
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+) => TimeRange = (durationHours: number) =>
   pipe(humanTimeToTimestamp, makeRange(hourInMs * durationHours));
 
 export type TimeRange = { start: number; end: number };
 
-const temporalDate = (tz: number, now: number) =>
+const temporalDate = (tz: number, now: number): Temporal.ZonedDateTime =>
   Temporal.Instant.fromEpochMilliseconds(now).toZonedDateTimeISO(
     numericalTimezoneToString(tz),
   );
@@ -75,14 +84,14 @@ const getOrdinalSuffix = (date: number): string => {
     : { 1: "st", 2: "nd", 3: "rd" }[date % 10] || "th";
 };
 
-const dateDayString = (language: Language, d: Temporal.ZonedDateTime) =>
+const dateDayString = (language: Language, d: Temporal.ZonedDateTime): string =>
   language === "en" ? `${d.day}${getOrdinalSuffix(d.day)}` : `ה-${d.day}`;
 
 export const timestampToMonthName = (
   language: Language,
   timezone: number,
   timestamp: number,
-) => monthName(language, temporalDate(timezone, timestamp));
+): string => monthName(language, temporalDate(timezone, timestamp));
 
 const jsDateToDayOfWeek = (language: Language, d: Temporal.ZonedDateTime) =>
   weekdayNames[language][d.dayOfWeek - 1];
@@ -91,7 +100,7 @@ export const timestampToHumanTime = (
   language: Language,
   timezone: number,
   timestamp: number,
-) =>
+): string =>
   pipe(
     temporalDate,
     (d: Temporal.ZonedDateTime) =>
@@ -100,26 +109,35 @@ export const timestampToHumanTime = (
       } ${dateDayString(language, d)} ${d.year}`,
   )(timezone, timestamp);
 
-const jsDate24Clock = pipe(juxt(getHours, getMinutes), join(":"));
+const jsDate24Clock: (d: Temporal.ZonedDateTime) => string = pipe(
+  juxt(getHours, getMinutes),
+  join(":"),
+);
 
-export const formatTime24Hour = pipe(temporalDate, jsDate24Clock);
+export const formatTime24Hour: (tz: number, now: number) => string = pipe(
+  temporalDate,
+  jsDate24Clock,
+);
 
-export const dateString = pipe(
+export const dateString: (tz: number, now: number) => string = pipe(
   temporalDate,
   (d: Temporal.ZonedDateTime) => `${d.day}/${d.month}`,
 );
 
-export const dateStringIncludingYear = pipe(
-  temporalDate,
-  (d: Temporal.ZonedDateTime) => `${d.day}/${d.month}/${d.year}`,
-);
+export const dateStringIncludingYear: (tz: number, now: number) => string =
+  pipe(
+    temporalDate,
+    (d: Temporal.ZonedDateTime) => `${d.day}/${d.month}/${d.year}`,
+  );
 
-export const weekday = (language: Language, tz: number, time: number) =>
-  jsDateToDayOfWeek(language, temporalDate(tz, time));
+export const weekday: (language: Language, tz: number, time: number) => string =
+  (language: Language, tz: number, time: number) =>
+    jsDateToDayOfWeek(language, temporalDate(tz, time));
 
 const badTimeThrowerCatcher = throwerCatcher();
 
-export const catchBadTimeString = badTimeThrowerCatcher.catcher;
+export const catchBadTimeString: ReturnType<typeof throwerCatcher>["catcher"] =
+  badTimeThrowerCatcher.catcher;
 
 const parseTimeStringHelper = (x: string) => {
   for (
@@ -207,7 +225,7 @@ const monthNames = {
   ],
 };
 
-export const nowTimestamp = () => new Date().getTime();
+export const nowTimestamp: () => number = () => new Date().getTime();
 
 export const endOfDay = (tz: number, timestamp: number): number =>
   temporalDate(tz, timestamp + 24 * hourInMs).startOfDay().epochMilliseconds;
@@ -231,7 +249,7 @@ export const datesInRange = (
   language: Language,
   tz: number,
   { start, end }: TimeRange,
-) => {
+): string[] => {
   const result = [];
   let current = start;
   while (current < end + dayInMs) {
@@ -246,7 +264,10 @@ export const currentYear: (tz: number, now: number) => number = pipe(
   ({ year }: Temporal.ZonedDateTime) => year,
 );
 
-export const intersectTimeRanges = (r1: TimeRange, r2: TimeRange) => ({
+export const intersectTimeRanges = (
+  r1: TimeRange,
+  r2: TimeRange,
+): TimeRange => ({
   start: Math.max(r1.start, r2.start),
   end: Math.min(r1.end, r2.end),
 });
@@ -266,7 +287,7 @@ const monthAcronyms = [
   "Dec",
 ];
 
-export const textHasDate = (text: string) =>
+export const textHasDate = (text: string): boolean =>
   [
     ...concat(Object.values(monthNames)),
     ...monthAcronyms,
@@ -395,7 +416,12 @@ const timeOpt = (
   ) + ((!time && !exclusive) ? dayInMs : 0);
 };
 
-export const parseTimeWithoutYear = (
+export const parseTimeWithoutYear: (
+  exclusive: boolean,
+  defaultTime: string,
+  datetime: string,
+  relativeTo: number,
+) => number = (
   exclusive: boolean,
   defaultTime: string,
   datetime: string,
