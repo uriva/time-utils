@@ -1,5 +1,5 @@
-import { HebrewCalendar } from "npm:@hebcal/core";
-import { context } from "npm:context-inject";
+import { HebrewCalendar } from "npm:@hebcal/core@5.9.2";
+import { context } from "npm:context-inject@0.0.3";
 import {
   coerce,
   concat,
@@ -11,14 +11,14 @@ import {
   pipe,
   smaller,
   throwerCatcher,
-} from "npm:gamla";
-import { parse as datetimeParse } from "jsr:@std/datetime";
+} from "npm:gamla@118.0.0";
+import { parse as datetimeParse } from "jsr:@std/datetime@0.225.4";
 import {
   caseInsensitive,
   simplify,
   stringToRegexp,
   wholeWord,
-} from "npm:silly-nlp";
+} from "npm:silly-nlp@33.0.0";
 
 const minuteInMs = 60 * 1000;
 
