@@ -14,7 +14,7 @@ import {
   textHasDate,
   timestampToHumanTime,
   weekday,
-} from "./main.ts";
+} from "./mod.ts";
 
 import { assertEquals } from "jsr:@std/assert";
 
