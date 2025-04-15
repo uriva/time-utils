@@ -14,9 +14,9 @@ import {
   textHasDate,
   timestampToHumanTime,
   weekday,
-} from "./mod.ts";
+} from "./time.ts";
 
-import { assertEquals } from "jsr:@std/assert@1.0.12";
+import { assertEquals } from "jsr:@std/assert@1.0.8";
 
 Deno.test("conversions", () => {
   assertEquals(humanTimeToTimestamp(-5, 2023, 11, 26, 22, 8), 1701054480000);

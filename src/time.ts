@@ -1,3 +1,4 @@
+import { parse as datetimeParse } from "jsr:@std/datetime@0.225.4";
 import { HebrewCalendar } from "npm:@hebcal/core@5.9.2";
 import { context } from "npm:context-inject@0.0.3";
 import {
@@ -12,7 +13,6 @@ import {
   smaller,
   throwerCatcher,
 } from "npm:gamla@118.0.0";
-import { parse as datetimeParse } from "jsr:@std/datetime@0.225.4";
 import {
   caseInsensitive,
   simplify,
@@ -26,7 +26,7 @@ export const hourInMs = 60 * minuteInMs;
 
 export const dayInMs = 24 * hourInMs;
 
-const numericalTimezoneToString = (tz: number) =>
+const numericalTimezoneToString = (tz: number): string =>
   `${
     (Math.sign(tz) < 0 ? "-" : "+") +
     Math.abs(tz).toString().padStart(2, "0")
@@ -117,9 +117,9 @@ export const dateStringIncludingYear = pipe(
 export const weekday = (language: Language, tz: number, time: number) =>
   jsDateToDayOfWeek(language, temporalDate(tz, time));
 
-const { thrower: throwBadTimeString, catcher } = throwerCatcher();
+const badTimeThrowerCatcher = throwerCatcher();
 
-export const catchBadTimeString = catcher;
+export const catchBadTimeString = badTimeThrowerCatcher.catcher;
 
 const parseTimeStringHelper = (x: string) => {
   for (
@@ -135,7 +135,7 @@ const parseTimeStringHelper = (x: string) => {
       // deno-lint-ignore no-empty
     } catch (_) {}
   }
-  throwBadTimeString();
+  badTimeThrowerCatcher.thrower();
   throw new Error(); // for typing.
 };
 
@@ -241,7 +241,7 @@ export const datesInRange = (
   return result;
 };
 
-export const currentYear = pipe(
+export const currentYear: (tz: number, now: number) => number = pipe(
   temporalDate,
   ({ year }: Temporal.ZonedDateTime) => year,
 );
@@ -286,25 +286,37 @@ const checkHasDate = (input: string) =>
     /\b\d{1,2}[./]\d{1,2}\b/, // without the year
   ].some((x) => x.test(input));
 
-export const { access: contextTimezone, inject: injectTimezone } = context(
+const timezoneInjection = context(
   (): number => {
     throw new Error("timezone was not provided");
   },
 );
 
-export const { access: contextTimestamp, inject: injectTimestamp } = context(
+export const contextTimezone: () => number = timezoneInjection.access;
+export const injectTimezone: (
+  fn: () => number,
+  // deno-lint-ignore no-explicit-any
+) => <F extends (...xs: any[]) => any>(f: F) => F = timezoneInjection.inject;
+
+const timestampInjection = context(
   (): number => {
     throw new Error("no time was injected");
   },
 );
 
+export const contextTimestamp: () => number = timestampInjection.access;
+export const injectTimestamp: (
+  fn: () => number,
+  // deno-lint-ignore no-explicit-any
+) => <F extends (...xs: any[]) => any>(f: F) => F = timestampInjection.inject;
+
 const nightStart = 21 * hourInMs;
 
 const nightEnd = 5 * hourInMs;
 
-export const nightDuration = nightEnd + hourInMs * 24 - nightStart;
+const nightDuration = nightEnd + hourInMs * 24 - nightStart;
 
-export const msFromNightStart = pipe(
+export const msFromNightStart: (tz: number, now: number) => number = pipe(
   temporalDate,
   (x: Temporal.ZonedDateTime) =>
     x.epochMilliseconds - x.startOfDay().epochMilliseconds,
@@ -312,7 +324,10 @@ export const msFromNightStart = pipe(
     ms > nightStart ? ms - nightStart : ms + (24 * hourInMs - nightStart),
 );
 
-export const isNightTime = pipe(msFromNightStart, smaller(nightDuration));
+export const isNightTime: (tz: number, now: number) => boolean = pipe(
+  msFromNightStart,
+  smaller(nightDuration),
+);
 
 export const makeRange = (duration: number) => (start: number): TimeRange => ({
   start,
@@ -366,7 +381,7 @@ const timeOpt = (
     monthNames.en.findIndex((m) =>
       m.toLowerCase().includes(monthStr.toLowerCase())
     ) + 1;
-  if (month === 0) throwBadTimeString();
+  if (month === 0) badTimeThrowerCatcher.thrower();
   const fixedDay = (year % 4 !== 0 && month === 2 && day === 29) ? 28 : day;
   return dateToTimestamp(
     contextTimezone(),
@@ -405,7 +420,10 @@ const jsDateToStartOfDayInMs = (date: Date): number => {
   return dateInContextTz.setHours(0, 0, 0, 0);
 };
 
-export const israeliHoliday = (name: string, days: number) =>
+export const israeliHoliday = (name: string, days: number): (
+  tz: number,
+  now: number,
+) => TimeRange =>
   pipe(
     (tz: number, now: number): Date =>
       coerce(
