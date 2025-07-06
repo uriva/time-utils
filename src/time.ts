@@ -21,7 +21,7 @@ import {
   wholeWord,
 } from "npm:silly-nlp@33.0.0";
 
-const minuteInMs = 60 * 1000;
+export const minuteInMs = 60 * 1000;
 
 export const hourInMs = 60 * minuteInMs;
 
@@ -475,7 +475,7 @@ export const ianaTimezoneOffset = (
 export const localTimeToTimestamp = (iana: string, localTime: string): number =>
   (DateTime.fromISO(localTime, { zone: iana })).toUTC().toMillis();
 
-export const botReadableTime = (iana: string, time: number) => {
+export const botReadableTime = (iana: string, time: number): string => {
   const dt = DateTime.fromMillis(time, { zone: iana });
   const day = dt.day;
   const getOrdinal = (n: number) =>
