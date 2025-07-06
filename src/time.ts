@@ -13,6 +13,7 @@ import {
   smaller,
   throwerCatcher,
 } from "npm:gamla@118.0.0";
+import { DateTime } from "npm:luxon@3.4.4";
 import {
   caseInsensitive,
   simplify,
@@ -465,10 +466,23 @@ export const israeliHoliday = (name: string, days: number): (
     }),
   );
 
-export const israelTimezone = (): number => {
-  const now = new Date();
-  const intlOptions = { timeZone: "Asia/Jerusalem", hour12: false };
-  const israelTime = new Intl.DateTimeFormat("en-US", intlOptions).format(now);
-  const israelDate = new Date(`${now.toDateString()}T${israelTime}`);
-  return israelDate.getUTCHours() - now.getUTCHours() === 3 ? 3 : 2;
+export const ianaTimezoneOffset = (
+  ianaString: string,
+  nowTimestamp: number,
+): number =>
+  (DateTime.fromMillis(nowTimestamp, { zone: ianaString })).offset / 60;
+
+export const localTimeToTimestamp = (iana: string, localTime: string): number =>
+  (DateTime.fromISO(localTime, { zone: iana })).toUTC().toMillis();
+
+export const botReadableTime = (iana: string, time: number) => {
+  const dt = DateTime.fromMillis(time, { zone: iana });
+  const day = dt.day;
+  const getOrdinal = (n: number) =>
+    (n > 3 && n < 21) ? "th" : (["st", "nd", "rd"][(n % 10) - 1] || "th");
+  return `${dt.toFormat("cccc, HH:mm, MMMM")} ${day}${getOrdinal(day)} ${
+    dt.toFormat("yyyy")
+  }`;
 };
+
+export const localTimeFormat = "Local time. Format: YYYY-MM-DDTHH:mm:ss";

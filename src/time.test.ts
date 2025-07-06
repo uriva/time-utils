@@ -1,4 +1,5 @@
 import {
+  botReadableTime,
   datesInRange,
   dateString,
   dateToTimestamp,
@@ -8,7 +9,9 @@ import {
   formatTime24Hour,
   hourInMs,
   humanTimeToTimestamp,
+  ianaTimezoneOffset,
   isNightTime,
+  localTimeToTimestamp,
   msFromNightStart,
   nextWeekday,
   textHasDate,
@@ -179,3 +182,80 @@ Deno.test("upcoming weekday", () => {
     humanTimeToTimestamp(2, 2023, 12, 3, 0, 0),
   );
 });
+
+Deno.test("israel timezone", () => {
+  assertEquals(
+    ianaTimezoneOffset(
+      "Asia/Jerusalem",
+      new Date("2024-07-01T12:00:00Z").getTime(),
+    ),
+    3,
+  );
+  assertEquals(
+    ianaTimezoneOffset(
+      "Asia/Jerusalem",
+      new Date("2024-01-01T12:00:00Z").getTime(),
+    ),
+    2,
+  );
+});
+
+Deno.test(
+  "botReadableTime returns human readable time for Asia/Jerusalem",
+  () => {
+    assertEquals(
+      botReadableTime("Asia/Jerusalem", Date.UTC(2025, 4, 20, 12, 0, 0, 0)),
+      "Tuesday, 15:00, May 20th 2025",
+    );
+  },
+);
+
+Deno.test(
+  "botReadableTime returns human readable time for UTC",
+  () => {
+    assertEquals(
+      botReadableTime("UTC", Date.UTC(2025, 4, 20, 12, 0, 0, 0)),
+      "Tuesday, 12:00, May 20th 2025",
+    );
+  },
+);
+
+Deno.test(
+  "botReadableTime returns human readable time for Europe/London",
+  () => {
+    assertEquals(
+      botReadableTime("Europe/London", Date.UTC(2025, 4, 20, 12, 0, 0, 0)),
+      "Tuesday, 13:00, May 20th 2025",
+    );
+  },
+);
+
+Deno.test(
+  "addTzToIsoTime adds correct offset for Asia/Jerusalem",
+  () => {
+    assertEquals(
+      localTimeToTimestamp("Asia/Jerusalem", "2025-05-20T12:00:00"),
+      humanTimeToTimestamp(3, 2025, 5, 20, 12, 0),
+    );
+  },
+);
+
+Deno.test(
+  "addTzToIsoTime adds correct offset for Asia/Jerusalem",
+  () => {
+    assertEquals(
+      localTimeToTimestamp("Asia/Jerusalem", "2025-06-30T21:21:00"),
+      humanTimeToTimestamp(3, 2025, 6, 30, 21, 21),
+    );
+  },
+);
+
+Deno.test(
+  "addTzToIsoTime adds correct offset for UTC",
+  () => {
+    assertEquals(
+      localTimeToTimestamp("UTC", "2025-05-20T12:00:00"),
+      humanTimeToTimestamp(0, 2025, 5, 20, 12, 0),
+    );
+  },
+);
