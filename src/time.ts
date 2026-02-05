@@ -473,7 +473,7 @@ export const ianaTimezoneOffset = (
   (DateTime.fromMillis(nowTimestamp, { zone: ianaString })).offset / 60;
 
 export const localTimeToTimestamp = (iana: string, localTime: string): number =>
-  (DateTime.fromISO(localTime, { zone: iana })).toUTC().toMillis();
+  (DateTime.fromISO(localTime.replace(/Z$/, ""), { zone: iana })).toUTC().toMillis();
 
 export const botReadableTime = (iana: string, time: number): string => {
   const dt = DateTime.fromMillis(time, { zone: iana });
