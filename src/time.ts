@@ -19,7 +19,7 @@ import {
   simplify,
   stringToRegexp,
   wholeWord,
-} from "npm:silly-nlp@33.0.0";
+} from "jsr:@uri/silly-nlp@0.1.0";
 
 export const minuteInMs = 60 * 1000;
 
