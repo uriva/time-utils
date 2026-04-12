@@ -27,14 +27,18 @@ export const hourInMs = 60 * minuteInMs;
 
 export const dayInMs = 24 * hourInMs;
 
-const numericalTimezoneToString = (tz: number): string =>
-  `${
-    (Math.sign(tz) < 0 ? "-" : "+") +
-    Math.abs(tz).toString().padStart(2, "0")
-  }:00`;
+export type Tz = number | string;
+
+const tzToString = (tz: Tz): string =>
+  typeof tz === "string"
+    ? tz
+    : `${
+      (Math.sign(tz) < 0 ? "-" : "+") +
+      Math.abs(tz).toString().padStart(2, "0")
+    }:00`;
 
 export const humanTimeToTimestamp = (
-  tz: number,
+  tz: Tz,
   year: number,
   month: number,
   day: number,
@@ -42,7 +46,7 @@ export const humanTimeToTimestamp = (
   minute: number,
 ): number =>
   Temporal.ZonedDateTime.from({
-    timeZone: numericalTimezoneToString(tz),
+    timeZone: tzToString(tz),
     year,
     month,
     day,
@@ -53,7 +57,7 @@ export const humanTimeToTimestamp = (
 export const rangeOfNHours: (
   durationHours: number,
 ) => (
-  tz: number,
+  tz: Tz,
   year: number,
   month: number,
   day: number,
@@ -64,9 +68,9 @@ export const rangeOfNHours: (
 
 export type TimeRange = { start: number; end: number };
 
-const temporalDate = (tz: number, now: number): Temporal.ZonedDateTime =>
+const temporalDate = (tz: Tz, now: number): Temporal.ZonedDateTime =>
   Temporal.Instant.fromEpochMilliseconds(now).toZonedDateTimeISO(
-    numericalTimezoneToString(tz),
+    tzToString(tz),
   );
 
 const getHours = (d: Temporal.ZonedDateTime) =>
@@ -90,7 +94,7 @@ const dateDayString = (language: Language, d: Temporal.ZonedDateTime): string =>
 
 export const timestampToMonthName = (
   language: Language,
-  timezone: number,
+  timezone: Tz,
   timestamp: number,
 ): string => monthName(language, temporalDate(timezone, timestamp));
 
@@ -99,7 +103,7 @@ const jsDateToDayOfWeek = (language: Language, d: Temporal.ZonedDateTime) =>
 
 export const timestampToHumanTime = (
   language: Language,
-  timezone: number,
+  timezone: Tz,
   timestamp: number,
 ): string =>
   pipe(
@@ -115,24 +119,24 @@ const jsDate24Clock: (d: Temporal.ZonedDateTime) => string = pipe(
   join(":"),
 );
 
-export const formatTime24Hour: (tz: number, now: number) => string = pipe(
+export const formatTime24Hour: (tz: Tz, now: number) => string = pipe(
   temporalDate,
   jsDate24Clock,
 );
 
-export const dateString: (tz: number, now: number) => string = pipe(
+export const dateString: (tz: Tz, now: number) => string = pipe(
   temporalDate,
   (d: Temporal.ZonedDateTime) => `${d.day}/${d.month}`,
 );
 
-export const dateStringIncludingYear: (tz: number, now: number) => string =
+export const dateStringIncludingYear: (tz: Tz, now: number) => string =
   pipe(
     temporalDate,
     (d: Temporal.ZonedDateTime) => `${d.day}/${d.month}/${d.year}`,
   );
 
-export const weekday: (language: Language, tz: number, time: number) => string =
-  (language: Language, tz: number, time: number) =>
+export const weekday: (language: Language, tz: Tz, time: number) => string =
+  (language: Language, tz: Tz, time: number) =>
     jsDateToDayOfWeek(language, temporalDate(tz, time));
 
 const badTimeThrowerCatcher = throwerCatcher();
@@ -158,12 +162,12 @@ const parseTimeStringHelper = (x: string) => {
   throw new Error(); // for typing.
 };
 
-export const dateToTimestamp = (tz: number, text: string): number =>
+export const dateToTimestamp = (tz: Tz, text: string): number =>
   letIn(
     parseTimeStringHelper(text.replace(/[TZ]/g, " ").trim()),
     (d) =>
       Temporal.ZonedDateTime.from({
-        timeZone: numericalTimezoneToString(tz),
+        timeZone: tzToString(tz),
         year: d.getFullYear(),
         month: d.getMonth() + 1,
         day: d.getDate(),
@@ -228,18 +232,18 @@ const monthNames = {
 
 export const nowTimestamp: () => number = () => new Date().getTime();
 
-export const endOfDay = (tz: number, timestamp: number): number =>
+export const endOfDay = (tz: Tz, timestamp: number): number =>
   temporalDate(tz, timestamp + 24 * hourInMs).startOfDay().epochMilliseconds;
 
-export const dayStart = (tz: number, timestamp: number): number =>
+export const dayStart = (tz: Tz, timestamp: number): number =>
   temporalDate(tz, timestamp).startOfDay().epochMilliseconds;
 
-export const endOfYear = (tz: number, timestamp: number): number =>
+export const endOfYear = (tz: Tz, timestamp: number): number =>
   letIn(
     temporalDate(tz, timestamp),
     (current) =>
       Temporal.ZonedDateTime.from({
-        timeZone: numericalTimezoneToString(tz),
+        timeZone: tzToString(tz),
         year: current.year + 1,
         month: 1,
         day: 1,
@@ -248,7 +252,7 @@ export const endOfYear = (tz: number, timestamp: number): number =>
 
 export const datesInRange = (
   language: Language,
-  tz: number,
+  tz: Tz,
   { start, end }: TimeRange,
 ): string[] => {
   const result = [];
@@ -260,7 +264,7 @@ export const datesInRange = (
   return result;
 };
 
-export const currentYear: (tz: number, now: number) => number = pipe(
+export const currentYear: (tz: Tz, now: number) => number = pipe(
   temporalDate,
   ({ year }: Temporal.ZonedDateTime) => year,
 );
@@ -309,14 +313,14 @@ const checkHasDate = (input: string) =>
   ].some((x) => x.test(input));
 
 const timezoneInjection = context(
-  (): number => {
+  (): Tz => {
     throw new Error("timezone was not provided");
   },
 );
 
-export const contextTimezone: () => number = timezoneInjection.access;
+export const contextTimezone: () => Tz = timezoneInjection.access;
 export const injectTimezone: (
-  fn: () => number,
+  fn: () => Tz,
   // deno-lint-ignore no-explicit-any
 ) => <F extends (...xs: any[]) => any>(f: F) => F = timezoneInjection.inject;
 
@@ -338,7 +342,7 @@ const nightEnd = 5 * hourInMs;
 
 const nightDuration = nightEnd + hourInMs * 24 - nightStart;
 
-export const msFromNightStart: (tz: number, now: number) => number = pipe(
+export const msFromNightStart: (tz: Tz, now: number) => number = pipe(
   temporalDate,
   (x: Temporal.ZonedDateTime) =>
     x.epochMilliseconds - x.startOfDay().epochMilliseconds,
@@ -346,7 +350,7 @@ export const msFromNightStart: (tz: number, now: number) => number = pipe(
     ms > nightStart ? ms - nightStart : ms + (24 * hourInMs - nightStart),
 );
 
-export const isNightTime: (tz: number, now: number) => boolean = pipe(
+export const isNightTime: (tz: Tz, now: number) => boolean = pipe(
   msFromNightStart,
   smaller(nightDuration),
 );
@@ -358,7 +362,7 @@ export const makeRange = (duration: number) => (start: number): TimeRange => ({
 
 export const nextWeekday = (
   desiredDayOfWeek: number, // e.g. Thursday will be 4
-  tz: number,
+  tz: Tz,
   timestamp: number,
 ): number =>
   letIn(
@@ -375,7 +379,7 @@ export const nextWeekday = (
 
 export const lastWeekday = (
   desiredDayOfWeek: number, // e.g. Thursday will be 4
-  tz: number,
+  tz: Tz,
   timestamp: number,
 ): number =>
   letIn(
@@ -440,19 +444,16 @@ export const parseTimeWithoutYear: (
     min((x: number) => Math.abs(x - relativeTo)),
   )([0, 1, -1]);
 
-const jsDateToStartOfDayInMs = (date: Date): number => {
-  const dateInContextTz = new Date(
-    date.getTime() + date.getTimezoneOffset() * 60 * 1000 + contextTimezone(),
-  );
-  return dateInContextTz.setHours(0, 0, 0, 0);
-};
+const jsDateToStartOfDayInMs = (date: Date): number =>
+  temporalDate(contextTimezone(), date.getTime()).startOfDay()
+    .epochMilliseconds;
 
 export const israeliHoliday = (name: string, days: number): (
-  tz: number,
+  tz: Tz,
   now: number,
 ) => TimeRange =>
   pipe(
-    (tz: number, now: number): Date =>
+    (tz: Tz, now: number): Date =>
       coerce(
         HebrewCalendar.calendar({
           start: new Date(now),
@@ -473,7 +474,8 @@ export const ianaTimezoneOffset = (
   (DateTime.fromMillis(nowTimestamp, { zone: ianaString })).offset / 60;
 
 export const localTimeToTimestamp = (iana: string, localTime: string): number =>
-  (DateTime.fromISO(localTime.replace(/Z$/, ""), { zone: iana })).toUTC().toMillis();
+  (DateTime.fromISO(localTime.replace(/Z$/, ""), { zone: iana })).toUTC()
+    .toMillis();
 
 export const botReadableTime = (iana: string, time: number): string => {
   const dt = DateTime.fromMillis(time, { zone: iana });

@@ -259,3 +259,75 @@ Deno.test(
     );
   },
 );
+
+Deno.test("IANA string timezone in humanTimeToTimestamp", () => {
+  assertEquals(
+    humanTimeToTimestamp("America/New_York", 2023, 11, 26, 22, 8),
+    humanTimeToTimestamp(-5, 2023, 11, 26, 22, 8),
+  );
+});
+
+Deno.test("IANA string timezone in formatTime24Hour", () => {
+  assertEquals(formatTime24Hour("America/New_York", 1701460680000), "14:58");
+  assertEquals(formatTime24Hour("Asia/Jerusalem", 1701460680000), "21:58");
+});
+
+Deno.test("IANA string timezone in dateToTimestamp", () => {
+  assertEquals(
+    formatTime24Hour(
+      "Asia/Jerusalem",
+      dateToTimestamp("Asia/Jerusalem", "2023-11-30 16:30"),
+    ),
+    "16:30",
+  );
+});
+
+Deno.test("IANA string timezone in weekday", () => {
+  assertEquals(weekday("en", "Asia/Jerusalem", 1710799200000), "Tuesday");
+});
+
+Deno.test("IANA string timezone in dateString", () => {
+  assertEquals(dateString("Asia/Jerusalem", 1710799200000), "19/3");
+  assertEquals(dateString("America/New_York", 1710283625000), "12/3");
+});
+
+Deno.test("IANA string timezone in datesInRange", () => {
+  assertEquals(
+    datesInRange("en", "America/New_York", {
+      start: 1702670400000,
+      end: 1702670400000 + 3 * dayInMs,
+    }),
+    ["Friday 15/12", "Saturday 16/12", "Sunday 17/12", "Monday 18/12"],
+  );
+});
+
+Deno.test("IANA string timezone in isNightTime", () => {
+  assertEquals(
+    isNightTime(
+      "America/New_York",
+      humanTimeToTimestamp(-5, 2023, 11, 26, 22, 8),
+    ),
+    true,
+  );
+  assertEquals(
+    isNightTime(
+      "Asia/Jerusalem",
+      humanTimeToTimestamp(3, 2023, 11, 26, 14, 8),
+    ),
+    false,
+  );
+});
+
+Deno.test("IANA string timezone in timestampToHumanTime", () => {
+  assertEquals(
+    timestampToHumanTime("en", "Asia/Jerusalem", 1701460680000),
+    "Friday, 21:58, December 1st 2023",
+  );
+});
+
+Deno.test("IANA string handles DST correctly", () => {
+  const summerTimestamp = new Date("2024-07-15T12:00:00Z").getTime();
+  const winterTimestamp = new Date("2024-01-15T12:00:00Z").getTime();
+  assertEquals(formatTime24Hour("America/New_York", summerTimestamp), "08:00");
+  assertEquals(formatTime24Hour("America/New_York", winterTimestamp), "07:00");
+});
