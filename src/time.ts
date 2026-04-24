@@ -453,11 +453,11 @@ export const israeliHoliday = (name: string, days: number): (
   now: number,
 ) => TimeRange =>
   pipe(
-    (tz: Tz, now: number): Date =>
+    (_tz: Tz, now: number): Date =>
       coerce(
         HebrewCalendar.calendar({
           start: new Date(now),
-          end: new Date(Math.max(now + dayInMs * 90, endOfYear(tz, now))),
+          end: new Date(now + dayInMs * 400),
         }).find(({ desc }) => desc === name)?.date.greg(),
       ),
     jsDateToStartOfDayInMs,
