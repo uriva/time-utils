@@ -11,7 +11,6 @@ import {
   min,
   pipe,
   smaller,
-  tryCatch,
 } from "npm:gamla@118.0.0";
 import { DateTime } from "npm:luxon@3.4.4";
 import {
@@ -140,7 +139,16 @@ export const weekday: (language: Language, tz: Tz, time: number) => string =
     jsDateToDayOfWeek(language, temporalDate(tz, time));
 
 export const catchBadTimeString = (fallback: () => unknown) =>
-  tryCatch(() => fallback());
+  // deno-lint-ignore no-explicit-any
+  (f: (...args: any[]) => any) =>
+    // deno-lint-ignore no-explicit-any
+    (...xs: any[]) => {
+      try {
+        return f(...xs);
+      } catch {
+        return fallback();
+      }
+    };
 
 const parseTimeStringHelper = (x: string) => {
   for (
