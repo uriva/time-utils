@@ -11,7 +11,7 @@ import {
   min,
   pipe,
   smaller,
-  throwerCatcher,
+  tryCatch,
 } from "npm:gamla@118.0.0";
 import { DateTime } from "npm:luxon@3.4.4";
 import {
@@ -139,10 +139,8 @@ export const weekday: (language: Language, tz: Tz, time: number) => string =
   (language: Language, tz: Tz, time: number) =>
     jsDateToDayOfWeek(language, temporalDate(tz, time));
 
-const badTimeThrowerCatcher = throwerCatcher();
-
-export const catchBadTimeString: ReturnType<typeof throwerCatcher>["catcher"] =
-  badTimeThrowerCatcher.catcher;
+export const catchBadTimeString = (fallback: () => unknown) =>
+  tryCatch(() => fallback());
 
 const parseTimeStringHelper = (x: string) => {
   for (
@@ -158,8 +156,7 @@ const parseTimeStringHelper = (x: string) => {
       // deno-lint-ignore no-empty
     } catch (_) {}
   }
-  badTimeThrowerCatcher.thrower();
-  throw new Error(); // for typing.
+  throw new Error(`Could not parse datetime "${x}"`);
 };
 
 export const dateToTimestamp = (tz: Tz, text: string): number =>
@@ -407,7 +404,7 @@ const timeOpt = (
     monthNames.en.findIndex((m) =>
       m.toLowerCase().includes(monthStr.toLowerCase())
     ) + 1;
-  if (month === 0) badTimeThrowerCatcher.thrower();
+  if (month === 0) throw new Error(`Unrecognized month in datetime "${datetime}"`);
   const fixedDay = (year % 4 !== 0 && month === 2 && day === 29) ? 28 : day;
   return dateToTimestamp(
     contextTimezone(),
